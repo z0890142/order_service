@@ -1,0 +1,176 @@
+definitions:
+  code.Code:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 16
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    type: integer
+    x-enum-varnames:
+    - Code_OK
+    - Code_CANCELLED
+    - Code_UNKNOWN
+    - Code_INVALID_ARGUMENT
+    - Code_DEADLINE_EXCEEDED
+    - Code_NOT_FOUND
+    - Code_ALREADY_EXISTS
+    - Code_PERMISSION_DENIED
+    - Code_UNAUTHENTICATED
+    - Code_RESOURCE_EXHAUSTED
+    - Code_FAILED_PRECONDITION
+    - Code_ABORTED
+    - Code_OUT_OF_RANGE
+    - Code_UNIMPLEMENTED
+    - Code_INTERNAL
+    - Code_UNAVAILABLE
+    - Code_DATA_LOSS
+  models.ErrorDetails:
+    properties:
+      error_msg:
+        type: string
+      row: {}
+    required:
+    - error_msg
+    - row
+    type: object
+  models.HttpError:
+    properties:
+      code:
+        $ref: '#/definitions/code.Code'
+      error:
+        items:
+          $ref: '#/definitions/models.ErrorDetails'
+        type: array
+      message:
+        type: string
+    required:
+    - code
+    - error
+    - message
+    type: object
+  models.Order:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      doctor_id:
+        type: integer
+      id:
+        type: string
+      patient_id:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Response:
+    properties:
+      code:
+        $ref: '#/definitions/code.Code'
+      data: {}
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Order Upload API
+  version: "1.0"
+paths:
+  /order-service/api/v1/patients:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: list patinets
+  /order-service/api/v1/patients/{patientId}/orders:
+    get:
+      parameters:
+      - description: patinet ID
+        in: path
+        name: patientId
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: list patinet's order
+    post:
+      parameters:
+      - description: patinet ID
+        in: path
+        name: patientId
+        required: true
+        type: integer
+      - description: order
+        in: body
+        name: params
+        required: true
+        schema:
+          $ref: '#/definitions/models.Order'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: create patinet's order
+  /order-service/api/v1/patients/{patientId}/orders/{orderId}:
+    put:
+      parameters:
+      - description: patinet ID
+        in: path
+        name: patientId
+        required: true
+        type: integer
+      - description: order ID
+        in: path
+        name: orderId
+        required: true
+        type: string
+      - description: order
+        in: body
+        name: params
+        required: true
+        schema:
+          $ref: '#/definitions/models.Order'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: update patinet's order
+swagger: "2.0"

@@ -9,7 +9,7 @@ LOG_FILE: stdout
 ERROR_LOG_FILE: stdout
 
 DATABASES:
-  DRIVER: mysql
+  DRIVER: postgre
   HOST: 127.0.01
   PORT: 5432
   USERNAME: root

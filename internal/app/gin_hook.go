@@ -27,9 +27,9 @@ func initCtrl(app *Application, r *gin.Engine) error {
 	ctrl := controller.NewController(dataMgr)
 
 	r.GET("order-service/api/v1/patients", ctrl.ListPatinets)
-	r.GET("order-service/api/v1/patient/:patientId/orders", ctrl.ListOrders)
-	r.PUT("order-service/api/v1/patient/:oriderId", ctrl.UpdateOrder)
-	r.POST("order-service/api/v1/patient/:patientId/orders", ctrl.CreateOrder)
+	r.GET("order-service/api/v1/patients/:patientId/orders", ctrl.ListOrders)
+	r.PUT("order-service/api/v1/patients/:patientId/orders/:orderId", ctrl.UpdateOrder)
+	r.POST("order-service/api/v1/patients/:patientId/orders", ctrl.CreateOrder)
 
 	return nil
 }

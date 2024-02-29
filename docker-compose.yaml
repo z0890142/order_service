@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   postgres:
     image: postgres:latest
     container_name: postgres_container
@@ -17,3 +18,20 @@ services:
     ports:
       - "27017:27017"
 
+  service-build:
+    build:
+      context: .
+      dockerfile: build/dockerfile
+    image: order_service:latest
+
+  order_service:
+    image: order_service:latest
+    ports:  
+      - 8080:8080
+    environment:
+      - DATABASES.HOST=postgres
+      - MONGO.URL=mongodb://mongo:27017
+    depends_on:
+      - postgres
+      - mongo
+    restart: always

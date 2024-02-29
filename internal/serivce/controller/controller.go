@@ -10,6 +10,7 @@ import (
 	"order_service/pkg/models"
 	"strconv"
 	"sync"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/genproto/googleapis/rpc/code"
@@ -29,6 +30,10 @@ func NewController(dataMgr data.DataManager) *Controller {
 	}
 }
 
+// @Summary list patinets
+// @router /order-service/api/v1/patients [get]
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.HttpError
 func (ctrl *Controller) ListPatinets(ginc *gin.Context) {
 
 	patients, err := ctrl.dataMgr.ListPatients(ginc)
@@ -46,6 +51,12 @@ func (ctrl *Controller) ListPatinets(ginc *gin.Context) {
 	}
 	ginc.JSON(http.StatusOK, response)
 }
+
+// @Summary list patinet's order
+// @router /order-service/api/v1/patients/{patientId}/orders [get]
+// @Param patientId path int true "patinet ID"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.HttpError
 func (ctrl *Controller) ListOrders(ginc *gin.Context) {
 	patientIDStr := ginc.Param("patientId")
 	if patientIDStr == "" {
@@ -59,7 +70,7 @@ func (ctrl *Controller) ListOrders(ginc *gin.Context) {
 	if err != nil {
 		logger.GetLoggerWithKeys(map[string]interface{}{
 			"error": err,
-		}).Error("ListPatinets")
+		}).Error("ListOrders")
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
 	}
 
@@ -78,14 +89,42 @@ func (ctrl *Controller) ListOrders(ginc *gin.Context) {
 	}
 	ginc.JSON(http.StatusOK, response)
 }
+
+// @Summary update patinet's order
+// @router /order-service/api/v1/patients/{patientId}/orders/{orderId} [put]
+// @Param patientId path int true "patinet ID"
+// @Param orderId path string true "order ID"
+// @param params body models.Order true "order"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.HttpError
 func (ctrl *Controller) UpdateOrder(ginc *gin.Context) {
 
-	orderIDStr := ginc.Param("oriderId")
+	orderIDStr := ginc.Param("orderId")
 	if orderIDStr == "" {
 		logger.GetLoggerWithKeys(map[string]interface{}{
 			"error": "INVALID_ARGUMENT",
 		}).Error("UpdateOrder")
 		ctrl.handleError(ginc, fmt.Errorf("INVALID_ARGUMENT"), http.StatusBadRequest, code.Code_INVALID_ARGUMENT)
+		return
+	}
+
+	patientIDStr := ginc.Param("patientId")
+	if patientIDStr == "" {
+		logger.GetLoggerWithKeys(map[string]interface{}{
+			"error": "INVALID_ARGUMENT",
+		}).Error("ListPatinets")
+		ctrl.handleError(ginc, fmt.Errorf("INVALID_ARGUMENT"), http.StatusBadRequest, code.Code_INVALID_ARGUMENT)
+		return
+	}
+
+	patientID, err := strconv.Atoi(patientIDStr)
+	if err != nil {
+		logger.GetLoggerWithKeys(map[string]interface{}{
+			"error": err,
+		}).Error("ListOrders")
+		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
+
+		return
 	}
 
 	order := models.Order{}
@@ -100,9 +139,12 @@ func (ctrl *Controller) UpdateOrder(ginc *gin.Context) {
 			"error": err,
 		}).Error("UpdateOrder")
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
+		return
 	}
 
 	order.ID = orderId
+	order.PatientID = patientID
+	order.UpdatedAt = time.Now()
 
 	if err := ctrl.dataMgr.UpdateOrder(ginc, &order); err != nil {
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
@@ -119,9 +161,16 @@ func (ctrl *Controller) UpdateOrder(ginc *gin.Context) {
 	ginc.JSON(http.StatusOK, response)
 
 }
+
+// @Summary create patinet's order
+// @router /order-service/api/v1/patients/{patientId}/orders [post]
+// @Param patientId path int true "patinet ID"
+// @param params body models.Order true "order"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.HttpError
 func (ctrl *Controller) CreateOrder(ginc *gin.Context) {
-	patientID := ginc.Param("patientId")
-	if patientID == "" {
+	patientIDStr := ginc.Param("patientId")
+	if patientIDStr == "" {
 		logger.GetLoggerWithKeys(map[string]interface{}{
 			"error": "INVALID_ARGUMENT",
 		}).Error("CreateOrder")
@@ -133,8 +182,15 @@ func (ctrl *Controller) CreateOrder(ginc *gin.Context) {
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
 		return
 	}
-	order.PatientID = patientID
 
+	patientID, err := strconv.Atoi(patientIDStr)
+	if err != nil {
+		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
+		return
+	}
+
+	order.PatientID = patientID
+	order.CreatedAt = time.Now()
 	if err := ctrl.dataMgr.CreateOrder(ginc, &order); err != nil {
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
 		return
