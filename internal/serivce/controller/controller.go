@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"order_service/c"
 	"order_service/internal/data"
+	"order_service/internal/serivce/handler"
 	"order_service/pkg/logger"
 	"order_service/pkg/models"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,23 +22,72 @@ import (
 
 type Controller struct {
 	dataMgr       data.DataManager
+	tokenHandler  handler.TokenHandler
 	shuntDownOnce sync.Once
 }
 
 func NewController(dataMgr data.DataManager) *Controller {
+	tokenHandler := handler.NewTokenHandler(dataMgr)
 	return &Controller{
 		dataMgr:       dataMgr,
 		shuntDownOnce: sync.Once{},
+		tokenHandler:  tokenHandler,
 	}
+}
+
+func (ctrl *Controller) Login(ginc *gin.Context) {
+	doctor := models.Doctor{}
+	if err := ginc.BindJSON(&doctor); err != nil {
+		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
+		return
+	}
+
+	token, err := ctrl.tokenHandler.GetAccessToken(ginc, doctor)
+	if err != nil {
+		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
+		return
+	}
+
+	ginc.JSON(http.StatusOK, token)
+}
+
+func (ctrl *Controller) RefreshToken(ginc *gin.Context) {
+
+	authHeader := ginc.GetHeader("Authorization")
+	refreshToken := strings.Split(authHeader, " ")[1]
+
+	resp, err := ctrl.tokenHandler.RefreshToken(ginc, refreshToken)
+	if err != nil {
+		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
+		return
+	}
+	ginc.JSON(http.StatusOK, resp)
 }
 
 // @Summary list patinets
 // @router /order-service/api/v1/patients [get]
+// @Param limit query int false "limit"
+// @Param offset query int false "offset"
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.HttpError
 func (ctrl *Controller) ListPatinets(ginc *gin.Context) {
+	limitStr := ginc.Query("limit")
+	offsetStr := ginc.Query("offset")
 
-	patients, err := ctrl.dataMgr.ListPatients(ginc)
+	defaultLimit := 20
+	defaultOffset := 0
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = defaultLimit
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = defaultOffset
+	}
+
+	patients, err := ctrl.dataMgr.ListPatients(ginc, limit, offset)
 	if err != nil {
 		logger.GetLoggerWithKeys(map[string]interface{}{
 			"error": err,
@@ -55,6 +106,8 @@ func (ctrl *Controller) ListPatinets(ginc *gin.Context) {
 // @Summary list patinet's order
 // @router /order-service/api/v1/patients/{patientId}/orders [get]
 // @Param patientId path int true "patinet ID"
+// @Param limit query int false "limit"
+// @Param offset query int false "offset"
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.HttpError
 func (ctrl *Controller) ListOrders(ginc *gin.Context) {
@@ -74,7 +127,23 @@ func (ctrl *Controller) ListOrders(ginc *gin.Context) {
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
 	}
 
-	orders, err := ctrl.dataMgr.ListOrderByPatientId(ginc, patientID)
+	limitStr := ginc.Query("limit")
+	offsetStr := ginc.Query("offset")
+
+	defaultLimit := 20
+	defaultOffset := 0
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = defaultLimit
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = defaultOffset
+	}
+
+	orders, err := ctrl.dataMgr.ListOrderByPatientId(ginc, patientID, limit, offset)
 	if err != nil {
 		logger.GetLoggerWithKeys(map[string]interface{}{
 			"error": err,

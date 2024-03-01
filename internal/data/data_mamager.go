@@ -9,14 +9,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	"gorm.io/gorm"
 )
 
 type DataManager interface {
-	ListPatients(context.Context) ([]models.Patient, error)
-	ListOrderByPatientId(context.Context, int) ([]models.Order, error)
+	ListPatients(context.Context, int, int) ([]models.Patient, error)
+	ListOrderByPatientId(context.Context, int, int, int) ([]models.Order, error)
 	UpdateOrder(context.Context, *models.Order) error
 	CreateOrder(context.Context, *models.Order) error
+	GetDoctor(context.Context, map[string]interface{}, *models.Doctor) error
 	Close(context.Context)
 }
 
@@ -32,18 +35,23 @@ func NewDataManager(gormClient *gorm.DB, mongoClient *mongo.Collection) DataMana
 	}
 }
 
-func (d *dataMgr) ListPatients(ctx context.Context) ([]models.Patient, error) {
+func (d *dataMgr) ListPatients(ctx context.Context, limit, offset int) ([]models.Patient, error) {
 	var patients []models.Patient
 
-	if err := d.gormClient.Find(&patients).Error; err != nil {
+	if err := d.gormClient.
+		Offset(offset).Limit(limit).
+		Find(&patients).
+		Error; err != nil {
 		return nil, fmt.Errorf("ListPatients: %s", err.Error())
 	}
 	return patients, nil
 }
-func (mgr *dataMgr) ListOrderByPatientId(ctx context.Context, patientId int) ([]models.Order, error) {
+func (mgr *dataMgr) ListOrderByPatientId(ctx context.Context, patientId, limit, offset int) ([]models.Order, error) {
 
 	filter := bson.D{{"patient_id", patientId}}
-	cursor, err := mgr.mongoClient.Find(ctx, filter)
+	options := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset))
+
+	cursor, err := mgr.mongoClient.Find(ctx, filter, options)
 	if err != nil {
 		return nil, fmt.Errorf("ListOrderByPatientId: %s", err.Error())
 	}
@@ -91,6 +99,15 @@ func (mgr *dataMgr) CreateOrder(ctx context.Context, order *models.Order) error 
 	order.ID = result.InsertedID.(primitive.ObjectID)
 	return nil
 
+}
+
+func (mgr *dataMgr) GetDoctor(ctx context.Context, condition map[string]interface{}, doctor *models.Doctor) error {
+	if err := mgr.gormClient.
+		Where(condition).
+		First(doctor).Error; err != nil {
+		return fmt.Errorf("GetDoctor: %v", err)
+	}
+	return nil
 }
 
 func (mgr *dataMgr) Close(ctx context.Context) {

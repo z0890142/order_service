@@ -32,8 +32,13 @@ type Config struct {
 	Databases         DatabaseOption `mapstructure:"DATABASES"`
 	Mongo             Mongo          `mapstructure:"MONGO"`
 	MigrationFilePath string         `mapstructure:"MIGRATION_FILE_PATH"`
+	Jwt               Jwt            `mapstructure:"JWT"`
 }
-
+type Jwt struct {
+	Key           string `mapstructure:"KEY"`
+	AccessExpire  int64  `mapstructure:"ACCESSS_EXPIRE"`
+	RefreshExpire int64  `mapstructure:"REFRESH_EXPIRE"`
+}
 type Mongo struct {
 	Url        string `mapstructure:"URL"`
 	Collection string `mapstructure:"COLLECTION"`

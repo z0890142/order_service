@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"order_service/internal/data"
 	"order_service/internal/serivce/controller"
+	"order_service/internal/serivce/middleware"
 	"order_service/pkg/database"
+
+	"github.com/gin-contrib/cors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,12 +27,19 @@ func initCtrl(app *Application, r *gin.Engine) error {
 	}
 
 	dataMgr := data.NewDataManager(gormCli, mongoCli)
+
+	mid := middleware.NewMiddleware(dataMgr)
 	ctrl := controller.NewController(dataMgr)
 
-	r.GET("order-service/api/v1/patients", ctrl.ListPatinets)
-	r.GET("order-service/api/v1/patients/:patientId/orders", ctrl.ListOrders)
-	r.PUT("order-service/api/v1/patients/:patientId/orders/:orderId", ctrl.UpdateOrder)
-	r.POST("order-service/api/v1/patients/:patientId/orders", ctrl.CreateOrder)
+	r.POST("/login", ctrl.Login)
+	r.POST("/refresh-token", ctrl.RefreshToken)
+
+	v1Group := r.Group("order-service/api/v1")
+	v1Group.Use(mid.AuthMiddleware)
+	v1Group.GET("/patients", ctrl.ListPatinets)
+	v1Group.GET("/patients/:patientId/orders", ctrl.ListOrders)
+	v1Group.PUT("/patients/:patientId/orders/:orderId", ctrl.UpdateOrder)
+	v1Group.POST("/patients/:patientId/orders", ctrl.CreateOrder)
 
 	return nil
 }
@@ -42,6 +52,7 @@ func InitGinApplicationHook(app *Application) error {
 	gin.EnableJsonDecoderUseNumber()
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(cors.Default())
 
 	initCtrl(app, r)
 	addr := fmt.Sprintf("%s:%s", app.GetConfig().Service.Host, app.GetConfig().Service.Port)

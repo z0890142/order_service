@@ -24,3 +24,8 @@ MONGO:
   DATABASE: order-service
 
 MIGRATION_FILE_PATH: ./migrations
+
+JWT:
+  KEY: test_jwt_key
+  ACCESSS_EXPIRE: 3600
+  REFRESH_EXPIRE: 86400
