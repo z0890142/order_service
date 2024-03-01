@@ -35,6 +35,11 @@ func NewController(dataMgr data.DataManager) *Controller {
 	}
 }
 
+// @Summary list patinets
+// @router /order-service/login [post]
+// @param params body models.Doctor true "doctor"
+// @Success 200 {object} models.TokenResponse
+// @Failure 400 {object} models.HttpError
 func (ctrl *Controller) Login(ginc *gin.Context) {
 	doctor := models.Doctor{}
 	if err := ginc.BindJSON(&doctor); err != nil {
@@ -68,6 +73,7 @@ func (ctrl *Controller) RefreshToken(ginc *gin.Context) {
 // @router /order-service/api/v1/patients [get]
 // @Param limit query int false "limit"
 // @Param offset query int false "offset"
+// @param Authorization header string true "Authorization"
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.HttpError
 func (ctrl *Controller) ListPatinets(ginc *gin.Context) {

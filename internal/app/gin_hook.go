@@ -8,7 +8,6 @@ import (
 	"order_service/pkg/database"
 
 	"github.com/gin-contrib/cors"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -50,9 +49,18 @@ func InitGinApplicationHook(app *Application) error {
 	}
 
 	gin.EnableJsonDecoderUseNumber()
+
 	r := gin.New()
+	config := cors.DefaultConfig()
+	config.AddAllowHeaders("Authorization")
+	config.AllowCredentials = true
+	config.AllowAllOrigins = false
+	config.AllowOriginFunc = func(origin string) bool {
+		return true
+	}
+
+	r.Use(cors.New(config))
 	r.Use(gin.Recovery())
-	r.Use(cors.Default())
 
 	initCtrl(app, r)
 	addr := fmt.Sprintf("%s:%s", app.GetConfig().Service.Host, app.GetConfig().Service.Port)
