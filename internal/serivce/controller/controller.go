@@ -173,6 +173,8 @@ func (ctrl *Controller) ListOrders(ginc *gin.Context) {
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.HttpError
 func (ctrl *Controller) UpdateOrder(ginc *gin.Context) {
+	doctorInter, _ := ginc.Get("doctor")
+	doctor := doctorInter.(models.Doctor)
 
 	orderIDStr := ginc.Param("orderId")
 	if orderIDStr == "" {
@@ -220,6 +222,7 @@ func (ctrl *Controller) UpdateOrder(ginc *gin.Context) {
 	order.ID = orderId
 	order.PatientID = patientID
 	order.UpdatedAt = time.Now()
+	order.DoctorName = doctor.Username
 
 	if err := ctrl.dataMgr.UpdateOrder(ginc, &order); err != nil {
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
@@ -244,6 +247,9 @@ func (ctrl *Controller) UpdateOrder(ginc *gin.Context) {
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.HttpError
 func (ctrl *Controller) CreateOrder(ginc *gin.Context) {
+	doctorInter, _ := ginc.Get("doctor")
+	doctor := doctorInter.(models.Doctor)
+
 	patientIDStr := ginc.Param("patientId")
 	if patientIDStr == "" {
 		logger.GetLoggerWithKeys(map[string]interface{}{
@@ -266,6 +272,8 @@ func (ctrl *Controller) CreateOrder(ginc *gin.Context) {
 
 	order.PatientID = patientID
 	order.CreatedAt = time.Now()
+	order.DoctorName = doctor.Username
+
 	if err := ctrl.dataMgr.CreateOrder(ginc, &order); err != nil {
 		ctrl.handleError(ginc, err, http.StatusBadRequest, code.Code_INTERNAL)
 		return

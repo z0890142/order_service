@@ -25,7 +25,7 @@ func (m *middleware) AuthMiddleware(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	tokenString := strings.Split(authHeader, " ")[1]
 
-	claims := &jwt.StandardClaims{}
+	claims := &models.CustomerClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.GetConfig().Jwt.Key), nil
 	})
@@ -38,7 +38,8 @@ func (m *middleware) AuthMiddleware(c *gin.Context) {
 	doctor := models.Doctor{}
 	// Check if Doctor exists with the given ID (you need to implement this logic)
 	err = m.dataMgr.GetDoctor(c, map[string]interface{}{
-		"id": claims.Id,
+		"id":       claims.DoctorId,
+		"username": claims.DoctorName,
 	}, &doctor)
 	if err != nil || doctor.ID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})

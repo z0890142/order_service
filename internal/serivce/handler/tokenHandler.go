@@ -49,12 +49,12 @@ func (t *tokenHandler) GetAccessToken(ctx context.Context, doctor models.Doctor)
 		return nil, fmt.Errorf("Login: password incorrect")
 	}
 
-	accessToken, err := t.generateAccessToekn(fmt.Sprintf("%d", findDoctor.ID))
+	accessToken, err := t.generateAccessToekn(findDoctor)
 	if err != nil {
 		return nil, fmt.Errorf("Login: %s", err.Error())
 	}
 
-	refreshToken, err := t.generateRefreshToekn(fmt.Sprintf("%d", findDoctor.ID))
+	refreshToken, err := t.generateRefreshToekn(findDoctor)
 	if err != nil {
 		return nil, fmt.Errorf("Login: %s", err.Error())
 	}
@@ -84,13 +84,16 @@ func (t *tokenHandler) checkPasswordHash(hash, password string) bool {
 	return err == nil
 }
 
-func (t *tokenHandler) generateRefreshToekn(doctorId string) (string, error) {
+func (t *tokenHandler) generateRefreshToekn(doctor models.Doctor) (string, error) {
 
 	refreshTokenExpire := time.Now().Add(t.refreshTokenExpireTime)
-	refreshTokenClaims := jwt.StandardClaims{
-		ExpiresAt: refreshTokenExpire.Unix(),
-		IssuedAt:  time.Now().Unix(),
-		Id:        doctorId,
+	refreshTokenClaims := models.CustomerClaims{
+		DoctorName: doctor.Username,
+		DoctorId:   doctor.ID,
+		StandardClaims: jwt.StandardClaims{
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: refreshTokenExpire.Unix(),
+		},
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
 	refreshTokenString, err := refreshToken.SignedString(t.jwtKey)
@@ -101,12 +104,15 @@ func (t *tokenHandler) generateRefreshToekn(doctorId string) (string, error) {
 	return refreshTokenString, nil
 }
 
-func (t *tokenHandler) generateAccessToekn(doctorId string) (string, error) {
+func (t *tokenHandler) generateAccessToekn(doctor models.Doctor) (string, error) {
 	accessTokenExpire := time.Now().Add(t.accessTokenExpireTime)
-	accessTokenClaims := jwt.StandardClaims{
-		Id:        doctorId,
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: accessTokenExpire.Unix(),
+	accessTokenClaims := models.CustomerClaims{
+		DoctorName: doctor.Username,
+		DoctorId:   doctor.ID,
+		StandardClaims: jwt.StandardClaims{
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: accessTokenExpire.Unix(),
+		},
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
@@ -119,7 +125,7 @@ func (t *tokenHandler) generateAccessToekn(doctorId string) (string, error) {
 }
 
 func (t *tokenHandler) RefreshToken(ctx context.Context, refreshToekn string) (*models.TokenResponse, error) {
-	claims := &jwt.StandardClaims{}
+	claims := &models.CustomerClaims{}
 	_, err := jwt.ParseWithClaims(refreshToekn, claims, func(token *jwt.Token) (interface{}, error) {
 		return t.jwtKey, nil
 	})
@@ -132,7 +138,17 @@ func (t *tokenHandler) RefreshToken(ctx context.Context, refreshToekn string) (*
 
 	}
 
-	accessTokenString, err := t.generateAccessToekn(claims.Id)
+	doctor := models.Doctor{}
+
+	err = t.dataMgr.GetDoctor(ctx, map[string]interface{}{
+		"username": claims.DoctorName,
+		"id":       claims.DoctorId,
+	}, &doctor)
+	if err != nil {
+		return nil, fmt.Errorf("RefreshToken: %s", err.Error())
+	}
+
+	accessTokenString, err := t.generateAccessToekn(doctor)
 	if err != nil {
 		return nil, fmt.Errorf("RefreshToken: %s", err.Error())
 	}

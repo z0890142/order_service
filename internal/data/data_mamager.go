@@ -72,7 +72,7 @@ func (mgr *dataMgr) UpdateOrder(ctx context.Context, order *models.Order) error 
 
 	// 將醫囑結構轉換為BSON文檔
 	update := bson.D{{"$set", bson.D{
-		{"doctor_id", order.DoctorID},
+		{"doctor_name", order.DoctorName},
 		{"content", order.Content},
 		{"status", order.Status},
 		{"updated_at", order.UpdatedAt},
