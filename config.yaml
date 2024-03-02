@@ -1,0 +1,31 @@
+ENV: local
+SERVICE:
+  NAME: order_service
+  HOST: "0.0.0.0"
+  PORT: "8080"
+
+LOG_LEVEL: INFO
+LOG_FILE: stdout
+ERROR_LOG_FILE: stdout
+
+DATABASES:
+  DRIVER: postgre
+  HOST: 127.0.01
+  PORT: 5432
+  USERNAME: root
+  PASSWORD: pass
+  DBNAME: order
+  CHARSET: utf8mb4
+  POOL_SIZE: 100
+
+MONGO:
+  URL: mongodb://localhost:27017
+  COLLECTION: order
+  DATABASE: order-service
+
+MIGRATION_FILE_PATH: ./migrations
+
+JWT:
+  KEY: test_jwt_key
+  ACCESSS_EXPIRE: 3600
+  REFRESH_EXPIRE: 86400
