@@ -37,6 +37,19 @@ definitions:
     - Code_INTERNAL
     - Code_UNAVAILABLE
     - Code_DATA_LOSS
+  models.Doctor:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
   models.ErrorDetails:
     properties:
       error_msg:
@@ -67,8 +80,8 @@ definitions:
         type: string
       created_at:
         type: string
-      doctor_id:
-        type: integer
+      doctor_name:
+        type: string
       id:
         type: string
       patient_id:
@@ -86,13 +99,57 @@ definitions:
       message:
         type: string
     type: object
+  models.TokenResponse:
+    properties:
+      access_expire_time:
+        type: integer
+      access_token:
+        type: string
+      refresh_expire_time:
+        type: integer
+      refresh_token:
+        type: string
+    type: object
 info:
   contact: {}
   title: Order Upload API
   version: "1.0"
 paths:
+  /login:
+    post:
+      parameters:
+      - description: doctor
+        in: body
+        name: params
+        required: true
+        schema:
+          $ref: '#/definitions/models.Doctor'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: login
   /order-service/api/v1/patients:
     get:
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        type: integer
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
       responses:
         "200":
           description: OK
@@ -110,6 +167,14 @@ paths:
         in: path
         name: patientId
         required: true
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: offset
+        in: query
+        name: offset
         type: integer
       responses:
         "200":
@@ -173,4 +238,22 @@ paths:
           schema:
             $ref: '#/definitions/models.HttpError'
       summary: update patinet's order
+  /refresh-token:
+    post:
+      parameters:
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: refresh token
 swagger: "2.0"

@@ -35,8 +35,8 @@ func NewController(dataMgr data.DataManager) *Controller {
 	}
 }
 
-// @Summary list patinets
-// @router /order-service/login [post]
+// @Summary login
+// @router /login [post]
 // @param params body models.Doctor true "doctor"
 // @Success 200 {object} models.TokenResponse
 // @Failure 400 {object} models.HttpError
@@ -56,6 +56,11 @@ func (ctrl *Controller) Login(ginc *gin.Context) {
 	ginc.JSON(http.StatusOK, token)
 }
 
+// @Summary refresh token
+// @router /refresh-token [post]
+// @param Authorization header string true "Authorization"
+// @Success 200 {object} models.TokenResponse
+// @Failure 400 {object} models.HttpError
 func (ctrl *Controller) RefreshToken(ginc *gin.Context) {
 
 	authHeader := ginc.GetHeader("Authorization")
