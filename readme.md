@@ -16,7 +16,7 @@ docker-compose up -d
 
 ## 產生文件
 
-於根目錄執行以下指令，執行完後位於根母路
+於根目錄執行以下指令，執行完後位於根目錄下的 /docs 資料夾裡
 ```
 make generate_doc
 ```
