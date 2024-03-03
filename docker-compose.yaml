@@ -23,6 +23,11 @@ services:
       context: .
       dockerfile: build/dockerfile
     image: order_service:latest
+  web-build:
+    build:
+      context: web
+      dockerfile: dockerfile-web
+    image: order_web:latest
 
   order_service:
     image: order_service:latest
@@ -35,3 +40,9 @@ services:
       - postgres
       - mongo
     restart: always
+  order_web:
+    image: order_web:latest
+    ports:  
+      - 3000:80
+    environment:
+      - REACT_APP_API_URL=http://order_service:8080
