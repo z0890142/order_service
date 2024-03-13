@@ -10,6 +10,7 @@ ENV GOARCH=amd64
 WORKDIR /service/
 COPY . .
 
+RUN go mod vendor
 RUN go build -mod=vendor -o /bin/app .
 #----------Deploy-----------
 FROM alpine as final
